@@ -1,10 +1,10 @@
-# myscreensavers
+# 🖥️ myscreensavers
 
 Omarchy-style terminal screensavers for Ubuntu/GNOME.
 
-Auto-activates after 5 minutes of idle. Shows animated ASCII art using [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects). Press any key to exit.
+Auto-activates after 5 minutes of idle. Displays animated ASCII art using [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects).
 
-## Install
+## 🚀 Install
 
 ```bash
 git clone git@github.com:reisset/myscreensavers.git ~/screensaver
@@ -12,36 +12,29 @@ cd ~/screensaver
 ./install.sh
 ```
 
-That's it. The screensaver daemon starts automatically and runs on login.
+Daemon starts automatically on login.
 
-## Test it
+## Usage
 
+**Test manually** (Ctrl+C to exit):
 ```bash
-# Run screensaver directly (Ctrl+C to exit)
 ./bin/screensaver
+```
 
-# Check daemon status
+**Check daemon:**
+```bash
 systemctl --user status screensaver-daemon
-
-# Watch daemon logs
 journalctl --user -u screensaver-daemon -f
 ```
 
-## Customize
+## ⚙️ Configuration
 
-### Change the ASCII art
+### 1. Custom ASCII Art
+Replace `config/ascii_art/ascii-text-art.txt` with your own text.
+Generate art with [patorjk.com](https://patorjk.com/software/taag/) or `figlet`.
 
-Edit `config/ascii_art/default.txt` with your own ASCII art.
-
-Generate ASCII text at [patorjk.com/software/taag](https://patorjk.com/software/taag/) or use `figlet`:
-
-```bash
-figlet -f slant "HELLO" > config/ascii_art/default.txt
-```
-
-### Change idle timeout
-
-Edit the systemd service:
+### 2. Idle Timeout
+Default is 5 minutes. To change (e.g., to 10 mins):
 
 ```bash
 systemctl --user edit screensaver-daemon
@@ -50,43 +43,36 @@ systemctl --user edit screensaver-daemon
 Add:
 ```ini
 [Service]
-Environment=IDLE_TIMEOUT_MS=600000  # 10 minutes
+Environment=IDLE_TIMEOUT_MS=600000
 ```
+Restart: `systemctl --user restart screensaver-daemon`
 
-Then restart: `systemctl --user restart screensaver-daemon`
-
-### Change effects
-
-Edit `bin/screensaver` and modify the `EFFECTS` array. Available effects:
-
-```
-beams blackhole bouncyballs bubbles burn colorshift crumble decrypt
-errorcorrect expand fireworks matrix middleout orbittingvolley overflow
-pour print rain rings scattered slide smoke spotlights spray swarm
-sweep synthgrid unstable vhstape waves wipe
-```
+### 3. Effects
+Edit `bin/screensaver` and modify the `EFFECTS` array.
+Available: `beams, matrix, rain, fireworks, spray, swarm, ...` (see script for full list)
 
 ## How it works
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  screensaver-daemon                                         │
-│  └─ polls GNOME IdleMonitor via DBus every 5 seconds        │
+│  └─ polls GNOME IdleMonitor via DBus every 5s               │
 │  └─ when idle > 5 min, launches fullscreen terminal         │
 │  └─ terminal runs: tte <effect> < ascii_art.txt             │
 │  └─ on user activity, kills the terminal                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Two bash scripts, ~150 lines total:
-- `bin/screensaver` - cycles through random effects
-- `bin/screensaver-daemon` - monitors idle time, launches/kills screensaver
+**Requirements:**
+- Ubuntu 22.04+ (GNOME Wayland/X11)
+- Python 3 + `terminaltexteffects`
+- Terminal: `kitty` or `alacritty` (recommended for best fullscreen), `gnome-terminal`
 
-## Requirements
+## Troubleshooting
 
-- Ubuntu 22.04+ with GNOME (Wayland or X11)
-- Python 3 + pip (for installing tte)
-- A terminal emulator (kitty, alacritty, or gnome-terminal)
+- **Not activating?** Check `systemctl --user status screensaver-daemon`.
+- **`tte` not found?** Ensure `~/.local/bin` is in your PATH.
+- **Not fullscreen?** Install `kitty` or `alacritty` for native fullscreen support.
 
 ## Uninstall
 
@@ -97,39 +83,6 @@ rm ~/.config/systemd/user/screensaver-daemon.service
 rm -rf ~/screensaver
 ```
 
-## Troubleshooting
-
-**Screensaver doesn't auto-activate:**
-```bash
-# Check if daemon is running
-systemctl --user status screensaver-daemon
-
-# Check logs
-journalctl --user -u screensaver-daemon -n 50
-
-# Test idle detection manually
-dbus-send --print-reply --dest=org.gnome.Mutter.IdleMonitor \
-  /org/gnome/Mutter/IdleMonitor/Core \
-  org.gnome.Mutter.IdleMonitor.GetIdletime
-```
-
-**tte command not found:**
-```bash
-pip3 install --user terminaltexteffects
-# Make sure ~/.local/bin is in your PATH
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-**Terminal doesn't go fullscreen:**
-
-Kitty and alacritty have better fullscreen support than gnome-terminal. Install one:
-```bash
-sudo apt install kitty
-# or
-sudo apt install alacritty
-```
-
 ## Credits
-
-- [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects) by ChrisBuilds
+- [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects)
 - Inspired by [Omarchy](https://github.com/basecamp/omarchy)
