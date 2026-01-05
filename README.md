@@ -1,285 +1,135 @@
-# Terminal Screensaver
+# myscreensavers
 
-Omarchy-style terminal-based screensavers using TerminalTextEffects library for Ubuntu Linux.
+Omarchy-style terminal screensavers for Ubuntu/GNOME.
 
-![Status](https://img.shields.io/badge/status-complete-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue)
+Auto-activates after 5 minutes of idle. Shows animated ASCII art using [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects). Press any key to exit.
 
-## Features
-
-- **Terminal-based animations**: Beautiful ASCII art with 23+ visual effects
-- **Multiple effects**: Matrix, Rain, Decrypt, Fireworks, Waves, Beams, Pour, Swarm, Rings, and more
-- **Smart cycling**: Random or sequential effect rotation with configurable duration
-- **Highly customizable**: YAML configuration for all aspects
-- **Flexible ASCII art**: Support for files, directories, or pyfiglet text generation
-- **Instant exit**: Press any key to exit immediately
-- **No dependencies**: Pure Python with standard libraries (except TerminalTextEffects)
-
-## Project Status
-
-**✅ All Phases Complete!**
-
-- ✅ Phase 1: Core screensaver engine with Matrix effect
-- ✅ Phase 2: Effect management and cycling (23 effects)
-- ✅ Phase 3: YAML configuration system
-- ✅ Phase 4: Launch controller and idle detection setup
-- ✅ Phase 5: Documentation and polish
-
-## Installation
-
-### Prerequisites
-
-You need to install system dependencies first:
+## Install
 
 ```bash
-sudo apt update
-sudo apt install -y python3-pip python3-venv python3.12-venv swayidle
-```
-
-### Install Script
-
-Once prerequisites are installed, run the installation script:
-
-```bash
+git clone git@github.com:reisset/myscreensavers.git ~/screensaver
+cd ~/screensaver
 ./install.sh
 ```
 
-This will:
-1. Create a Python virtual environment
-2. Install Python dependencies (terminaltexteffects, pyfiglet, PyYAML)
-3. Set up configuration directory at `~/.config/terminal-screensaver/`
-4. Copy default ASCII art
+That's it. The screensaver daemon starts automatically and runs on login.
 
-### Manual Installation
-
-If you prefer manual installation:
+## Test it
 
 ```bash
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
+# Run screensaver directly (Ctrl+C to exit)
+./bin/screensaver
 
-# Install Python packages
-pip install -r requirements.txt
+# Check daemon status
+systemctl --user status screensaver-daemon
 
-# Set up config directory
-mkdir -p ~/.config/terminal-screensaver/ascii_art
-cp config/ascii_art/* ~/.config/terminal-screensaver/ascii_art/
+# Watch daemon logs
+journalctl --user -u screensaver-daemon -f
 ```
 
-## Quick Start
+## Customize
 
-After installation:
+### Change the ASCII art
+
+Edit `config/ascii_art/default.txt` with your own ASCII art.
+
+Generate ASCII text at [patorjk.com/software/taag](https://patorjk.com/software/taag/) or use `figlet`:
 
 ```bash
-# Test manually (press any key to exit)
-./bin/screensaver-engine
-
-# Launch in fullscreen terminal
-./bin/screensaver-launch
-
-# Set up automatic idle detection (Wayland with idle protocol required)
-./setup-idle-detection.sh
+figlet -f slant "HELLO" > config/ascii_art/default.txt
 ```
 
-## Usage
+### Change idle timeout
 
-### Running Manually
+Edit the systemd service:
 
 ```bash
-# Basic usage
-./bin/screensaver-engine
-
-# Launch in fullscreen terminal
-./bin/screensaver-launch
+systemctl --user edit screensaver-daemon
 ```
 
-### Keyboard Shortcut (Recommended)
+Add:
+```ini
+[Service]
+Environment=IDLE_TIMEOUT_MS=600000  # 10 minutes
+```
 
-Bind `./bin/screensaver-launch` to a keyboard shortcut in your desktop environment:
+Then restart: `systemctl --user restart screensaver-daemon`
 
-- **GNOME**: Settings → Keyboard → Custom Shortcuts
-- **KDE**: System Settings → Shortcuts → Custom Shortcuts
-- **XFCE**: Settings → Keyboard → Application Shortcuts
+### Change effects
 
-Example shortcut: `Ctrl+Alt+L`
+Edit `bin/screensaver` and modify the `EFFECTS` array. Available effects:
 
-### Automatic Idle Detection
+```
+beams blackhole bouncyballs bubbles burn colorshift crumble decrypt
+errorcorrect expand fireworks matrix middleout orbittingvolley overflow
+pour print rain rings scattered slide smoke spotlights spray swarm
+sweep synthgrid unstable vhstape waves wipe
+```
 
-For Wayland compositors with idle protocol support (Sway, Hyprland, etc.):
+## How it works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  screensaver-daemon                                         │
+│  └─ polls GNOME IdleMonitor via DBus every 5 seconds        │
+│  └─ when idle > 5 min, launches fullscreen terminal         │
+│  └─ terminal runs: tte <effect> < ascii_art.txt             │
+│  └─ on user activity, kills the terminal                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Two bash scripts, ~150 lines total:
+- `bin/screensaver` - cycles through random effects
+- `bin/screensaver-daemon` - monitors idle time, launches/kills screensaver
+
+## Requirements
+
+- Ubuntu 22.04+ with GNOME (Wayland or X11)
+- Python 3 + pip (for installing tte)
+- A terminal emulator (kitty, alacritty, or gnome-terminal)
+
+## Uninstall
 
 ```bash
-./setup-idle-detection.sh
-```
-
-This sets up a systemd user service that monitors idle time and launches the screensaver automatically.
-
-**Note**: GNOME/Mutter and other compositors may not support the idle protocol. Use the keyboard shortcut method instead.
-
-## Customization
-
-All settings are configured via `~/.config/terminal-screensaver/config.yaml`
-
-### Change ASCII Art
-
-**Option 1: Use your own text file**
-```yaml
-content:
-  source: "file"
-  file_path: "~/.config/terminal-screensaver/ascii_art/myart.txt"
-```
-
-**Option 2: Generate from text**
-```yaml
-content:
-  source: "pyfiglet"
-  pyfiglet:
-    text: "MY AWESOME TEXT"
-    font: "slant"  # or banner, digital, bubble, etc.
-```
-
-**Option 3: Cycle through multiple files**
-```yaml
-content:
-  source: "directory"
-  directory: "~/.config/terminal-screensaver/ascii_art/"
-```
-
-### Change Effects
-
-**Enable specific effects:**
-```yaml
-screensaver:
-  enabled_effects:
-    - matrix
-    - rain
-    - fireworks
-    - decrypt
-    - waves
-```
-
-**Or exclude unwanted effects:**
-```yaml
-screensaver:
-  # Comment out or remove enabled_effects to use all except excluded
-  excluded_effects:
-    - unstable
-    - burn
-```
-
-### Adjust Timing
-
-```yaml
-screensaver:
-  effect_duration: 45  # Seconds per effect
-
-idle:
-  timeout_seconds: 600  # 10 minutes before screensaver starts
-```
-
-### Cycle Mode
-
-```yaml
-screensaver:
-  cycle_mode: "random"  # or "sequential"
-```
-
-## Available Effects
-
-The screensaver includes 23 effects from TerminalTextEffects:
-
-| Effect | Description |
-|--------|-------------|
-| matrix | Classic Matrix digital rain |
-| rain | Rainfall effect |
-| decrypt | Decryption animation |
-| fireworks | Explosive bursts |
-| waves | Wavy motion |
-| beams | Light beam effects |
-| pour | Pouring animation |
-| swarm | Particle swarm |
-| rings | Concentric rings |
-| bubbles | Bubble effects |
-| burn | Burning effect |
-| colorshift | Color transitions |
-| crumble | Crumbling effect |
-| expand | Expansion animation |
-| middleout | Middle-out reveal |
-| orbittingvolley | Orbiting particles |
-| scattered | Scattered appearance |
-| spotlights | Spotlight effects |
-| spray | Spray pattern |
-| sweep | Sweeping motion |
-| synthgrid | Synthwave grid |
-| blackhole | Black hole distortion |
-| slide | Sliding reveal |
-
-## Project Structure
-
-```
-screensaver/
-├── bin/
-│   ├── screensaver-engine          # Main screensaver executable
-│   └── screensaver-launch          # Fullscreen launcher
-├── screensaver/                    # Python package
-│   ├── __init__.py
-│   ├── engine.py                   # Core engine with effect cycling
-│   ├── effects.py                  # Effect manager (23 effects)
-│   ├── config.py                   # YAML configuration loader
-│   ├── terminal_controller.py      # Terminal control (cursor, input)
-│   └── ascii_loader.py             # ASCII art loading (file/pyfiglet)
-├── config/
-│   ├── default_config.yaml         # Configuration template
-│   └── ascii_art/
-│       └── default.txt             # Default ASCII art
-├── requirements.txt                # Python dependencies
-├── install.sh                      # Installation script
-├── setup-idle-detection.sh         # Idle detection setup
-└── README.md                       # This file
+systemctl --user stop screensaver-daemon
+systemctl --user disable screensaver-daemon
+rm ~/.config/systemd/user/screensaver-daemon.service
+rm -rf ~/screensaver
 ```
 
 ## Troubleshooting
 
-### Screensaver doesn't start automatically
+**Screensaver doesn't auto-activate:**
+```bash
+# Check if daemon is running
+systemctl --user status screensaver-daemon
 
-- Check if systemd service is running: `systemctl --user status screensaver-idle`
-- View logs: `journalctl --user -u screensaver-idle -f`
-- If you get "Display doesn't support idle protocol", your compositor doesn't support swayidle
-- Use a keyboard shortcut instead (recommended for GNOME/KDE)
+# Check logs
+journalctl --user -u screensaver-daemon -n 50
 
-### Effects are too fast/slow
-
-Edit `~/.config/terminal-screensaver/config.yaml` and change `effect_duration`:
-
-```yaml
-screensaver:
-  effect_duration: 60  # Slower: 60 seconds per effect
+# Test idle detection manually
+dbus-send --print-reply --dest=org.gnome.Mutter.IdleMonitor \
+  /org/gnome/Mutter/IdleMonitor/Core \
+  org.gnome.Mutter.IdleMonitor.GetIdletime
 ```
 
-### Want to use custom ASCII art
+**tte command not found:**
+```bash
+pip3 install --user terminaltexteffects
+# Make sure ~/.local/bin is in your PATH
+export PATH="$HOME/.local/bin:$PATH"
+```
 
-1. Create your ASCII art file
-2. Save to `~/.config/terminal-screensaver/ascii_art/myart.txt`
-3. Update config to point to your file
-4. Or use an ASCII generator online and paste the result
+**Terminal doesn't go fullscreen:**
 
-### Terminal gets corrupted after crash
-
-Run: `reset` or `stty sane && clear`
-
-## Contributing
-
-Contributions welcome! Feel free to:
-- Add new ASCII art examples
-- Report bugs or request features
-- Submit pull requests
+Kitty and alacritty have better fullscreen support than gnome-terminal. Install one:
+```bash
+sudo apt install kitty
+# or
+sudo apt install alacritty
+```
 
 ## Credits
 
-- Built with [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects) by ChrisBuilds
-- Inspired by [Omarchy](https://github.com/basecamp/omarchy) screensavers
-- ASCII art generation via [pyfiglet](https://github.com/pwaller/pyfiglet)
-
-## License
-
-MIT License - feel free to use and modify!
+- [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects) by ChrisBuilds
+- Inspired by [Omarchy](https://github.com/basecamp/omarchy)

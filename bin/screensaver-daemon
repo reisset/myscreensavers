@@ -1,0 +1,137 @@
+#!/bin/bash
+# screensaver-daemon - Monitor GNOME idle time and launch screensaver
+#
+# Uses GNOME's DBus IdleMonitor to detect inactivity.
+# Launches a fullscreen terminal with the screensaver when idle.
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCREENSAVER="$SCRIPT_DIR/bin/screensaver"
+
+# Configuration
+IDLE_TIMEOUT_MS=${IDLE_TIMEOUT_MS:-300000}  # 5 minutes in milliseconds
+CHECK_INTERVAL=${CHECK_INTERVAL:-5}          # Check every 5 seconds
+
+# State
+SCREENSAVER_PID=""
+TERMINAL_PID=""
+
+log() {
+    echo "[$(date '+%H:%M:%S')] $1"
+}
+
+get_idle_time() {
+    # Query GNOME's Mutter IdleMonitor via DBus
+    # Returns idle time in milliseconds
+    dbus-send --print-reply --dest=org.gnome.Mutter.IdleMonitor \
+        /org/gnome/Mutter/IdleMonitor/Core \
+        org.gnome.Mutter.IdleMonitor.GetIdletime 2>/dev/null | \
+        grep -oP 'uint64 \K[0-9]+' || echo "0"
+}
+
+find_terminal() {
+    # Auto-detect available terminal emulator
+    # Prefer kitty > alacritty > gnome-terminal
+    if command -v kitty &>/dev/null; then
+        echo "kitty"
+    elif command -v alacritty &>/dev/null; then
+        echo "alacritty"
+    elif command -v gnome-terminal &>/dev/null; then
+        echo "gnome-terminal"
+    else
+        echo ""
+    fi
+}
+
+launch_screensaver() {
+    local terminal
+    terminal=$(find_terminal)
+
+    if [[ -z "$terminal" ]]; then
+        log "Error: No supported terminal found"
+        return 1
+    fi
+
+    log "Launching screensaver in $terminal"
+
+    case "$terminal" in
+        kitty)
+            kitty --start-as=fullscreen --title="Screensaver" -e "$SCREENSAVER" &
+            ;;
+        alacritty)
+            alacritty --option window.startup_mode=Fullscreen --title "Screensaver" -e "$SCREENSAVER" &
+            ;;
+        gnome-terminal)
+            gnome-terminal --full-screen --title="Screensaver" -- "$SCREENSAVER" &
+            ;;
+    esac
+
+    TERMINAL_PID=$!
+    SCREENSAVER_PID=$TERMINAL_PID
+}
+
+kill_screensaver() {
+    if [[ -n "$SCREENSAVER_PID" ]]; then
+        log "Killing screensaver"
+
+        # Kill the terminal process
+        kill "$TERMINAL_PID" 2>/dev/null || true
+
+        # Also kill any orphaned tte processes
+        pkill -f "tte " 2>/dev/null || true
+
+        SCREENSAVER_PID=""
+        TERMINAL_PID=""
+    fi
+}
+
+is_screensaver_running() {
+    [[ -n "$SCREENSAVER_PID" ]] && kill -0 "$SCREENSAVER_PID" 2>/dev/null
+}
+
+cleanup() {
+    log "Shutting down daemon"
+    kill_screensaver
+    exit 0
+}
+
+trap cleanup SIGTERM SIGINT
+
+# Sanity checks
+if [[ ! -x "$SCREENSAVER" ]]; then
+    echo "Error: Screensaver script not found or not executable: $SCREENSAVER"
+    exit 1
+fi
+
+if ! command -v dbus-send &>/dev/null; then
+    echo "Error: dbus-send not found. Install dbus package."
+    exit 1
+fi
+
+# Test DBus connection
+if ! get_idle_time &>/dev/null; then
+    echo "Error: Cannot query GNOME IdleMonitor. Is GNOME running?"
+    exit 1
+fi
+
+log "Daemon started (timeout: ${IDLE_TIMEOUT_MS}ms, check interval: ${CHECK_INTERVAL}s)"
+log "Screensaver: $SCREENSAVER"
+log "Terminal: $(find_terminal)"
+
+# Main loop
+while true; do
+    IDLE_MS=$(get_idle_time)
+
+    if [[ "$IDLE_MS" -ge "$IDLE_TIMEOUT_MS" ]]; then
+        if ! is_screensaver_running; then
+            launch_screensaver
+        fi
+    else
+        if is_screensaver_running; then
+            kill_screensaver
+        fi
+    fi
+
+    sleep "$CHECK_INTERVAL"
+done

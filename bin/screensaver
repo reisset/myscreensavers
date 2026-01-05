@@ -1,0 +1,65 @@
+#!/bin/bash
+# screensaver - Display animated ASCII art with cycling TerminalTextEffects
+#
+# Usage: ./bin/screensaver [ascii_file]
+# Press any key to exit
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ASCII_ART="${1:-$SCRIPT_DIR/config/ascii_art/default.txt}"
+EFFECT_DURATION=30  # seconds per effect
+
+# Curated effects that look good as screensavers
+EFFECTS=(
+    matrix
+    rain
+    decrypt
+    beams
+    fireworks
+    waves
+    pour
+    swarm
+    rings
+    bubbles
+    spray
+    slide
+    scattered
+)
+
+# Check dependencies
+if ! command -v tte &>/dev/null; then
+    echo "Error: 'tte' (terminaltexteffects) not found."
+    echo "Install with: pip install terminaltexteffects"
+    exit 1
+fi
+
+if [[ ! -f "$ASCII_ART" ]]; then
+    echo "Error: ASCII art file not found: $ASCII_ART"
+    exit 1
+fi
+
+# Clean exit on signals
+trap 'exit 0' SIGTERM SIGINT
+
+# Hide cursor
+tput civis 2>/dev/null || true
+
+# Restore cursor on exit
+cleanup() {
+    tput cnorm 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# Cycle through effects forever
+while true; do
+    # Pick random effect
+    EFFECT=${EFFECTS[$RANDOM % ${#EFFECTS[@]}]}
+
+    # Clear screen
+    clear
+
+    # Run effect with timeout
+    # tte exits on keypress, timeout handles the cycling
+    timeout "$EFFECT_DURATION" tte "$EFFECT" < "$ASCII_ART" 2>/dev/null || true
+done
