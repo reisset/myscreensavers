@@ -3,7 +3,7 @@
 import sys
 import time
 from pathlib import Path
-from terminaltexteffects.effects import effect_matrix
+from terminaltexteffects.effects.effect_matrix import Matrix
 
 from .terminal_controller import TerminalController
 from .ascii_loader import ASCIILoader
@@ -44,11 +44,10 @@ class ScreensaverEngine:
 
                 # Create effect instance
                 if effect_name == "matrix":
-                    effect = effect_matrix.MatrixEffect(self.ascii_art)
-                    effect.effect_config.green_color = "00ff00"
+                    effect = Matrix(self.ascii_art)
                 else:
                     # Fallback to matrix if unknown effect
-                    effect = effect_matrix.MatrixEffect(self.ascii_art)
+                    effect = Matrix(self.ascii_art)
 
                 # Run the effect
                 with effect.terminal_output() as terminal:
@@ -58,11 +57,7 @@ class ScreensaverEngine:
                             break
 
                         # Print the frame
-                        print(frame, end="")
-                        sys.stdout.flush()
-
-                        # Small delay between frames
-                        time.sleep(0.05)
+                        terminal.print(frame)
 
         except KeyboardInterrupt:
             pass
