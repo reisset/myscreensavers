@@ -84,5 +84,13 @@ rm -rf ~/screensaver
 ```
 
 ## Credits
+
 - [TerminalTextEffects](https://github.com/ChrisBuilds/terminaltexteffects)
+
 - Inspired by [Omarchy](https://github.com/basecamp/omarchy)
+
+
+
+## License
+
+MIT, feel free to use as you wish! See [LICENSE](LICENSE) for details.
