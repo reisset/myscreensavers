@@ -7,8 +7,9 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-ASCII_ART="${1:-$SCRIPT_DIR/config/ascii_art/default.txt}"
+ASCII_ART="${1:-$SCRIPT_DIR/config/ascii_art/ascii-text-art.txt}"
 EFFECT_DURATION=30  # seconds per effect
+PAUSE_BETWEEN=5     # seconds between effects
 
 # Curated effects that look good as screensavers
 EFFECTS=(
@@ -60,6 +61,14 @@ while true; do
     clear
 
     # Run effect with timeout
-    # tte exits on keypress, timeout handles the cycling
-    timeout "$EFFECT_DURATION" tte "$EFFECT" < "$ASCII_ART" 2>/dev/null || true
+    # Note: global options must come BEFORE the effect name
+    timeout "$EFFECT_DURATION" tte \
+        --canvas-width 0 \
+        --canvas-height 0 \
+        --anchor-canvas c \
+        --anchor-text c \
+        "$EFFECT" < "$ASCII_ART" 2>/dev/null || true
+
+    # Pause before next effect
+    sleep "$PAUSE_BETWEEN"
 done
