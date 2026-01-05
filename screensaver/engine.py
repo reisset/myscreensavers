@@ -3,24 +3,38 @@
 import sys
 import time
 from pathlib import Path
-from terminaltexteffects.effects.effect_matrix import Matrix
 
 from .terminal_controller import TerminalController
 from .ascii_loader import ASCIILoader
+from .effects import EffectManager
 
 
 class ScreensaverEngine:
     """Main screensaver engine."""
 
-    def __init__(self, ascii_art: str = None, ascii_file: str = None):
+    def __init__(
+        self,
+        ascii_art: str = None,
+        ascii_file: str = None,
+        enabled_effects: list = None,
+        excluded_effects: list = None,
+        cycle_mode: str = "random",
+        effect_duration: int = 30
+    ):
         """
         Initialize the screensaver engine.
 
         Args:
             ascii_art: ASCII art string to display
             ascii_file: Path to ASCII art file (used if ascii_art is None)
+            enabled_effects: List of effect names to enable
+            excluded_effects: List of effect names to exclude
+            cycle_mode: "random" or "sequential"
+            effect_duration: Seconds per effect before cycling
         """
         self.terminal = TerminalController()
+        self.effect_manager = EffectManager(enabled_effects, excluded_effects, cycle_mode)
+        self.effect_duration = effect_duration
 
         # Load ASCII art
         if ascii_art:
@@ -31,50 +45,71 @@ class ScreensaverEngine:
             # Default: generate simple ASCII art
             self.ascii_art = ASCIILoader.generate_from_text("SCREENSAVER", font="slant")
 
-    def run_effect(self, effect_name: str = "matrix"):
+    def run_single_effect(self, effect_class):
         """
         Run a single effect on the ASCII art.
 
         Args:
-            effect_name: Name of the effect to run (default: matrix)
+            effect_class: The effect class to instantiate
+
+        Returns:
+            bool: True if should continue, False if exit requested
         """
         try:
+            self.terminal.clear_screen()
+
+            # Create effect instance
+            effect = effect_class(self.ascii_art)
+
+            # Run the effect with timeout
+            start_time = time.time()
+
+            with effect.terminal_output() as terminal:
+                for frame in effect:
+                    # Check for exit condition
+                    if self.terminal.check_for_input():
+                        return False
+
+                    # Check if duration exceeded
+                    if time.time() - start_time > self.effect_duration:
+                        break
+
+                    # Print the frame
+                    terminal.print(frame)
+
+            return True
+
+        except KeyboardInterrupt:
+            return False
+        except Exception as e:
+            print(f"Error running effect: {e}", file=sys.stderr)
+            return True  # Continue to next effect
+
+    def run(self):
+        """Run the screensaver with cycling effects."""
+        try:
             with self.terminal:
-                self.terminal.clear_screen()
+                while True:
+                    # Get next effect
+                    effect_class = self.effect_manager.get_next_effect()
 
-                # Create effect instance
-                if effect_name == "matrix":
-                    effect = Matrix(self.ascii_art)
-                else:
-                    # Fallback to matrix if unknown effect
-                    effect = Matrix(self.ascii_art)
+                    # Run the effect
+                    should_continue = self.run_single_effect(effect_class)
 
-                # Run the effect
-                with effect.terminal_output() as terminal:
-                    for frame in effect:
-                        # Check for exit condition
-                        if self.terminal.check_for_input():
-                            break
-
-                        # Print the frame
-                        terminal.print(frame)
+                    if not should_continue:
+                        break
 
         except KeyboardInterrupt:
             pass
-        except Exception as e:
-            print(f"Error running screensaver: {e}", file=sys.stderr)
         finally:
             self.terminal.restore_terminal()
-
-    def run(self):
-        """Run the screensaver with default settings."""
-        self.run_effect("matrix")
 
 
 def main():
     """Main entry point for the screensaver."""
-    # For now, use a simple default
-    engine = ScreensaverEngine()
+    # Create engine with default settings
+    # Effect duration of 10 seconds for testing (will be configurable in Phase 3)
+    engine = ScreensaverEngine(effect_duration=10)
     engine.run()
 
 
