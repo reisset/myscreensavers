@@ -107,9 +107,45 @@ class ScreensaverEngine:
 
 def main():
     """Main entry point for the screensaver."""
-    # Create engine with default settings
-    # Effect duration of 10 seconds for testing (will be configurable in Phase 3)
-    engine = ScreensaverEngine(effect_duration=10)
+    from .config import Config
+    from .ascii_loader import ASCIILoader
+
+    # Load configuration
+    config = Config()
+
+    if not config.validate():
+        print("Configuration validation failed. Using safe defaults.")
+
+    # Load ASCII art based on config
+    ascii_art = None
+    source = config.get_content_source()
+
+    try:
+        if source == "file":
+            ascii_art = ASCIILoader.load_from_file(config.get_content_file_path())
+        elif source == "directory":
+            # Load first file from directory (could be randomized later)
+            art_list = ASCIILoader.load_from_directory(config.get_content_directory())
+            ascii_art = art_list[0] if art_list else None
+        elif source == "pyfiglet":
+            ascii_art = ASCIILoader.generate_from_text(
+                config.get_pyfiglet_text(),
+                config.get_pyfiglet_font()
+            )
+    except Exception as e:
+        print(f"Warning: Could not load ASCII art: {e}")
+        print("Falling back to default text generation.")
+        ascii_art = ASCIILoader.generate_from_text("SCREENSAVER", "slant")
+
+    # Create engine with configuration
+    engine = ScreensaverEngine(
+        ascii_art=ascii_art,
+        enabled_effects=config.get_enabled_effects(),
+        excluded_effects=config.get_excluded_effects(),
+        cycle_mode=config.get_cycle_mode(),
+        effect_duration=config.get_effect_duration()
+    )
+
     engine.run()
 
 

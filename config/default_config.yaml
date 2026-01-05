@@ -1,0 +1,55 @@
+# Terminal Screensaver Configuration
+# Copy this file to ~/.config/terminal-screensaver/config.yaml to customize
+
+# Idle detection settings
+idle:
+  timeout_seconds: 300  # 5 minutes of inactivity before screensaver starts
+  detection_method: "swayidle"  # swayidle, logind, or polling
+
+# Screensaver behavior
+screensaver:
+  effect_duration: 30  # Seconds per effect before switching to next
+  cycle_mode: "random"  # "random" or "sequential"
+
+  # List specific effects to enable (comment out to use defaults)
+  # If this list is provided, only these effects will be used
+  enabled_effects:
+    - matrix
+    - rain
+    - decrypt
+    - fireworks
+    - waves
+    - beams
+    - pour
+    - swarm
+    - rings
+    - bubbles
+    - spotlights
+    - spray
+
+  # Or exclude specific effects from the full list
+  # (Only used if enabled_effects is not specified or commented out)
+  # excluded_effects:
+  #   - unstable    # Too chaotic
+  #   - vhstape     # May cause discomfort
+  #   - burn        # Too intense
+
+# ASCII art content
+content:
+  source: "file"  # "file", "pyfiglet", or "directory"
+
+  # For single file source
+  file_path: "~/.config/terminal-screensaver/ascii_art/default.txt"
+
+  # For directory source (cycles through all .txt files)
+  # directory: "~/.config/terminal-screensaver/ascii_art/"
+
+  # For pyfiglet text generation
+  pyfiglet:
+    text: "SCREENSAVER"
+    font: "slant"  # slant, banner, digital, bubble, etc.
+    # To list available fonts: pyfiglet -l
+
+# Terminal settings
+terminal:
+  hide_cursor: true

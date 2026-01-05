@@ -38,19 +38,13 @@ mkdir -p ~/.config/terminal-screensaver/ascii_art
 
 # Copy default config if it doesn't exist
 if [ ! -f ~/.config/terminal-screensaver/config.yaml ]; then
-    if [ -f config/default_config.yaml ]; then
-        cp config/default_config.yaml ~/.config/terminal-screensaver/config.yaml
-        echo "Created default configuration at ~/.config/terminal-screensaver/config.yaml"
-    fi
+    cp config/default_config.yaml ~/.config/terminal-screensaver/config.yaml
+    echo "Created default configuration at ~/.config/terminal-screensaver/config.yaml"
 fi
 
-# Copy default ASCII art if directory is empty
-if [ -z "$(ls -A ~/.config/terminal-screensaver/ascii_art 2>/dev/null)" ]; then
-    if [ -d config/ascii_art ]; then
-        cp config/ascii_art/* ~/.config/terminal-screensaver/ascii_art/
-        echo "Copied default ASCII art to ~/.config/terminal-screensaver/ascii_art/"
-    fi
-fi
+# Copy default ASCII art
+cp config/ascii_art/* ~/.config/terminal-screensaver/ascii_art/ 2>/dev/null || true
+echo "Copied default ASCII art to ~/.config/terminal-screensaver/ascii_art/"
 
 echo
 echo "========================================="
