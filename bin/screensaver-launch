@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Launch controller for terminal screensaver."""
+
+import subprocess
+import shutil
+from pathlib import Path
+
+
+def find_terminal_command():
+    """
+    Detect available terminal emulator and return launch command.
+
+    Returns:
+        list: Command to launch terminal in fullscreen, or None
+    """
+    terminals = [
+        # (terminal_name, fullscreen_args, command_prefix)
+        ("gnome-terminal", ["--full-screen", "--"], None),
+        ("alacritty", ["-o", "window.startup_mode=Fullscreen", "-e"], None),
+        ("konsole", ["--fullscreen", "-e"], None),
+        ("xterm", ["-fullscreen", "-e"], None),
+        ("kitty", ["--start-as=fullscreen"], None),
+    ]
+
+    for term_name, fullscreen_args, _ in terminals:
+        if shutil.which(term_name):
+            return [term_name] + fullscreen_args
+
+    return None
+
+
+def launch_screensaver():
+    """Launch the screensaver in a fullscreen terminal."""
+    # Get screensaver executable path
+    script_dir = Path(__file__).parent
+    screensaver_exe = script_dir / "screensaver-engine"
+
+    if not screensaver_exe.exists():
+        print(f"Error: Screensaver executable not found: {screensaver_exe}")
+        return 1
+
+    # Find terminal emulator
+    term_cmd = find_terminal_command()
+
+    if term_cmd:
+        # Launch in new fullscreen terminal
+        cmd = term_cmd + [str(screensaver_exe)]
+        try:
+            subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True  # Detach from parent process
+            )
+            return 0
+        except Exception as e:
+            print(f"Error launching screensaver in terminal: {e}")
+            return 1
+    else:
+        # No terminal found, run in current terminal
+        print("Warning: No suitable terminal emulator found.")
+        print("Running screensaver in current terminal...")
+        try:
+            subprocess.call([str(screensaver_exe)])
+            return 0
+        except Exception as e:
+            print(f"Error running screensaver: {e}")
+            return 1
+
+
+if __name__ == "__main__":
+    exit(launch_screensaver())
