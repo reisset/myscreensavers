@@ -72,7 +72,7 @@ if systemctl --user is-active --quiet screensaver-daemon.service; then
     echo "  Stop:    systemctl --user stop screensaver-daemon"
     echo "  Restart: systemctl --user restart screensaver-daemon"
     echo
-    echo "To customize, edit: $SCRIPT_DIR/config/ascii_art/default.txt"
+    echo "To customize, edit: $SCRIPT_DIR/config/ascii_art/ascii-text-art.txt"
 else
     echo "Warning: Service may not have started. Check:"
     echo "  journalctl --user -u screensaver-daemon -n 20"
