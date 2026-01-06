@@ -7,7 +7,11 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-ASCII_ART="${1:-$SCRIPT_DIR/config/ascii_art/ascii-text-art.txt}"
+ART_DIR="$SCRIPT_DIR/config/ascii_art"
+
+# Default to the passed file, OR null to indicate directory rotation
+MANUAL_ART="${1:-}"
+
 DEFAULT_EFFECT_DURATION=30  # fallback if effect not in EFFECT_DURATIONS
 PAUSE_BETWEEN=3     # seconds between effects
 
@@ -58,8 +62,8 @@ if ! command -v tte &>/dev/null; then
     exit 1
 fi
 
-if [[ ! -f "$ASCII_ART" ]]; then
-    echo "Error: ASCII art file not found: $ASCII_ART"
+if [[ -n "$MANUAL_ART" && ! -f "$MANUAL_ART" ]]; then
+    echo "Error: ASCII art file not found: $MANUAL_ART"
     exit 1
 fi
 
@@ -104,6 +108,23 @@ while true; do
         # Get effect-specific duration, or use default fallback
         DURATION="${EFFECT_DURATIONS[$EFFECT]:-$DEFAULT_EFFECT_DURATION}"
 
+        # Select Art: Use manual file if set, otherwise pick random .txt from ART_DIR
+        if [[ -n "$MANUAL_ART" ]]; then
+            CURRENT_ART="$MANUAL_ART"
+        else
+            # Find a random .txt file, ensuring it's not the same as the previous one
+            # 2>/dev/null suppresses errors if dir is empty.
+            # Loop max 5 times to find a different file (prevents infinite loop if only 1 file exists)
+            for ((i=0; i<5; i++)); do
+                NEXT_ART=$(find "$ART_DIR" -name "*.txt" 2>/dev/null | shuf -n 1)
+                [[ "$NEXT_ART" != "$PREVIOUS_ART" ]] && break
+            done
+            
+            # Fallback if find failed or only 1 file exists
+            CURRENT_ART="${NEXT_ART:-$ART_DIR/ascii-text-art.txt}"
+            PREVIOUS_ART="$CURRENT_ART"
+        fi
+
         if [[ "$FIRST_RUN" == true ]]; then
             # First effect: establish canvas position (no --reuse-canvas)
             timeout "$DURATION" tte \
@@ -113,7 +134,7 @@ while true; do
                 --anchor-text c \
                 --no-eol \
                 --no-restore-cursor \
-                "$EFFECT" < "$ASCII_ART" 2>/dev/null &
+                "$EFFECT" < "$CURRENT_ART" 2>/dev/null &
             FIRST_RUN=false
         else
             # Subsequent effects: reuse canvas for seamless in-place transition
@@ -125,7 +146,7 @@ while true; do
                 --reuse-canvas \
                 --no-eol \
                 --no-restore-cursor \
-                "$EFFECT" < "$ASCII_ART" 2>/dev/null &
+                "$EFFECT" < "$CURRENT_ART" 2>/dev/null &
         fi
         TTE_PID=$!
 
