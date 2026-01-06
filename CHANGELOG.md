@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture:** **Major Rewrite** - Refactored the entire application from a complex Python/YAML architecture to lightweight Bash scripts.
     - Replaced the Python-based daemon and effect manager with `bin/screensaver` and `bin/screensaver-daemon`.
     - Removed YAML configuration dependency; configuration is now handled via environment variables and script arrays.
+- **Visuals:** Optimized effect durations with per-effect timeouts to ensure animations feel complete (e.g., Matrix extended to 40s).
+- **Visuals:** Replaced the `rings` effect with `thunderstorm` for better variety.
 - **System:** Improved GNOME idle detection reliability by directly querying `org.gnome.Mutter.IdleMonitor` via `dbus-send`.
 - **System:** Updated `install.sh` to handle dependencies and systemd service installation more robustly.
 
