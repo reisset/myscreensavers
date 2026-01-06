@@ -11,3 +11,6 @@ Thumbs.db
 
 # Claude
 .claude/
+
+# Debugging
+EFFECT_DEBUG_REPORT.md
