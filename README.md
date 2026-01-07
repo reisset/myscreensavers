@@ -49,7 +49,7 @@ Restart: `systemctl --user restart screensaver-daemon`
 
 ### 3. Effects
 Edit `bin/screensaver` and modify the `EFFECTS` array.
-Available: `beams, matrix, rain, fireworks, spray, swarm, ...` (see script for full list)
+Available: `beams, matrix, rain, fireworks, spray, synthgrid, vhstape, blackhole, ...` (see script for full list)
 
 ## How it works
 

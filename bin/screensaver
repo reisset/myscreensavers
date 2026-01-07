@@ -12,47 +12,34 @@ ART_DIR="$SCRIPT_DIR/config/ascii_art"
 # Default to the passed file, OR null to indicate directory rotation
 MANUAL_ART="${1:-}"
 
-DEFAULT_EFFECT_DURATION=30  # fallback if effect not in EFFECT_DURATIONS
-PAUSE_BETWEEN=3     # seconds between effects
-
-# Individual effect durations (seconds) - optimized based on natural animation cycles
-declare -A EFFECT_DURATIONS=(
-    # Very short effects - need generous buffer to be visible
-    [slide]=10        # Natural: 3s  | Buffer: +7s
-    [scattered]=10    # Natural: 4s  | Buffer: +6s
-
-    # Short-to-medium effects
-    [spray]=15        # Natural: 8s  | Buffer: +7s
-    [pour]=15         # Natural: 9s  | Buffer: +6s
-    [waves]=15        # Natural: 10s | Buffer: +5s
-    [rain]=15         # Estimated (no test data)
-
-    # Medium-to-long effects
-    [beams]=20        # Natural: 15s | Buffer: +5s
-    [decrypt]=25      # Natural: 17s | Buffer: +8s
-    [bubbles]=25      # Natural: 18s | Buffer: +7s
-    [thunderstorm]=25 # Natural: 18s | Buffer: +7s (NEW - replaces rings)
-
-    # Long effects - need extra time to feel complete
-    [fireworks]=30    # Natural: 23s | Buffer: +7s
-    [matrix]=40       # Natural: 22s | Buffer: +18s (user reports needs more time)
-)
+SAFETY_TIMEOUT=60   # Global safety cap (in case an effect hangs)
+PAUSE_BETWEEN=2     # seconds between effects
 
 # Curated effects that look good as screensavers
+# NOTE: Infinite effects (like swarm) are excluded.
 EFFECTS=(
-    matrix
-    rain
-    decrypt
     beams
-    fireworks
-    waves
-    pour
-    # swarm      # Removed: infinite effect causes ~5s hangs
-    thunderstorm # Replaces rings (18s natural duration, tested and working)
+    binarypath
+    blackhole
     bubbles
-    spray
-    slide
+    burn
+    crumble
+    decrypt
+    fireworks
+    laseretch
+    matrix
+    orbittingvolley
+    pour
+    print
+    rain
     scattered
+    slide
+    spray
+    synthgrid
+    thunderstorm
+    vhstape
+    waves
+    wipe
 )
 
 # Check dependencies
@@ -101,13 +88,10 @@ FIRST_RUN=true
 
 # Cycle through effects forever, shuffled each round
 while true; do
-    # Shuffle effects for this cycle (see all 12 before any repeat)
+    # Shuffle effects for this cycle (see all available before any repeat)
     read -ra SHUFFLED <<< "$(shuffle_effects "${EFFECTS[@]}")"
 
     for EFFECT in "${SHUFFLED[@]}"; do
-        # Get effect-specific duration, or use default fallback
-        DURATION="${EFFECT_DURATIONS[$EFFECT]:-$DEFAULT_EFFECT_DURATION}"
-
         # Select Art: Use manual file if set, otherwise pick random .txt from ART_DIR
         if [[ -n "$MANUAL_ART" ]]; then
             CURRENT_ART="$MANUAL_ART"
@@ -127,7 +111,7 @@ while true; do
 
         if [[ "$FIRST_RUN" == true ]]; then
             # First effect: establish canvas position (no --reuse-canvas)
-            timeout "$DURATION" tte \
+            timeout "$SAFETY_TIMEOUT" tte \
                 --canvas-width 0 \
                 --canvas-height 0 \
                 --anchor-canvas c \
@@ -138,7 +122,7 @@ while true; do
             FIRST_RUN=false
         else
             # Subsequent effects: reuse canvas for seamless in-place transition
-            timeout "$DURATION" tte \
+            timeout "$SAFETY_TIMEOUT" tte \
                 --canvas-width 0 \
                 --canvas-height 0 \
                 --anchor-canvas c \

@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Visuals:** Optimized effect durations with per-effect timeouts to ensure animations feel complete (e.g., Matrix extended to 40s).
 - **Visuals:** Replaced the `rings` effect with `thunderstorm` for better visual variety.
 - **Visuals:** Added random ASCII art rotation. The screensaver now cycles through random `.txt` files in `config/ascii_art/` for each effect (prevents repeating the same art twice in a row).
+- **Visuals:** Greatly expanded the effect library. Added 10 new effects: `synthgrid`, `vhstape`, `blackhole`, `laseretch`, `crumble`, `orbittingvolley`, `print`, `burn`, `wipe`, `binarypath`.
+- **Logic:** Removed hardcoded duration limits. Animations now run to their natural completion, with a 60s safety timeout to prevent hangs.
+- **Config:** Reduced pause between effects to 2 seconds (was 3s) for a snappier experience.
 - **System:** Improved GNOME idle detection reliability by directly querying `org.gnome.Mutter.IdleMonitor` via `dbus-send`.
 - **System:** Updated `install.sh` to handle dependencies and systemd service installation more robustly.
 
