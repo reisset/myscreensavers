@@ -12,8 +12,5 @@ Thumbs.db
 # Claude
 .claude/
 
-#Review docs
-hollistic_review.md
-
 # Debugging
 EFFECT_DEBUG_REPORT.md

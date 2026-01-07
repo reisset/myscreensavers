@@ -5,7 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-01-05
+## [v1.0.0] - 2026-01-07
+
+### Added
+- **Power Efficiency:** Added **Battery Saver Mode**. The screensaver now detects if the device is discharging (via `/sys/class/power_supply` or `upower`) and prevents launch to save battery life.
+- **Performance:** Implemented **Instant Wake-Up**. The daemon now uses `SIGKILL` (-9) to immediately terminate the screensaver process tree upon user activity, eliminating the 2-5s lag previously experienced.
+
+## [v0.9.0] - 2026-01-06
+
+### Added
+- **Visuals:** Added random ASCII art rotation. The screensaver now cycles through random `.txt` files in `config/ascii_art/` for each effect.
+- **Visuals:** Greatly expanded the effect library to 20+ animations (including `synthgrid`, `vhstape`, `blackhole`, `laseretch`, `crumble`, `orbittingvolley`).
+- **Content:** Added new ASCII art pack (Tux, GNU, AFK, Binary).
+
+### Changed
+- **Logic:** Removed hardcoded duration limits. Animations now run to their natural completion, with a 60s safety timeout to prevent hangs.
+- **Config:** Reduced pause between effects to 2 seconds for a snappier experience.
+- **Visuals:** Replaced the `rings` effect with `thunderstorm` for better visual variety.
+
+## [v0.8.0] - 2026-01-05
 
 ### Added
 - **Visuals:** Implemented seamless effect transitions using `tte --reuse-canvas`.
@@ -19,12 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture:** **Major Rewrite** - Refactored the entire application from a complex Python/YAML architecture to lightweight Bash scripts.
     - Replaced the Python-based daemon and effect manager with `bin/screensaver` and `bin/screensaver-daemon`.
     - Removed YAML configuration dependency; configuration is now handled via environment variables and script arrays.
-- **Visuals:** Optimized effect durations with per-effect timeouts to ensure animations feel complete (e.g., Matrix extended to 40s).
-- **Visuals:** Replaced the `rings` effect with `thunderstorm` for better visual variety.
-- **Visuals:** Added random ASCII art rotation. The screensaver now cycles through random `.txt` files in `config/ascii_art/` for each effect (prevents repeating the same art twice in a row).
-- **Visuals:** Greatly expanded the effect library. Added 10 new effects: `synthgrid`, `vhstape`, `blackhole`, `laseretch`, `crumble`, `orbittingvolley`, `print`, `burn`, `wipe`, `binarypath`.
-- **Logic:** Removed hardcoded duration limits. Animations now run to their natural completion, with a 60s safety timeout to prevent hangs.
-- **Config:** Reduced pause between effects to 2 seconds (was 3s) for a snappier experience.
 - **System:** Improved GNOME idle detection reliability by directly querying `org.gnome.Mutter.IdleMonitor` via `dbus-send`.
 - **System:** Updated `install.sh` to handle dependencies and systemd service installation more robustly.
 

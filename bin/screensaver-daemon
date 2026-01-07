@@ -30,6 +30,33 @@ get_idle_time() {
         grep -oP 'uint64 \K[0-9]+' || echo "0"
 }
 
+check_battery() {
+    # Returns 0 (true) if on battery and discharging, 1 (false) otherwise.
+    # Checks /sys/class/power_supply first, then falls back to upower.
+    
+    # Method 1: /sys/class/power_supply
+    if [[ -d /sys/class/power_supply ]]; then
+        # Check all power supplies starting with BAT
+        for bat in /sys/class/power_supply/BAT*; do
+            if [[ -f "$bat/status" ]]; then
+                status=$(cat "$bat/status")
+                if [[ "$status" == "Discharging" ]]; then
+                    return 0 # True, we are draining battery
+                fi
+            fi
+        done
+    fi
+
+    # Method 2: upower (fallback)
+    if command -v upower &>/dev/null; then
+        if upower -i $(upower -e | grep 'BAT') 2>/dev/null | grep -q "state:.*discharging"; then
+            return 0
+        fi
+    fi
+
+    return 1 # Not discharging (AC power or full)
+}
+
 find_terminal() {
     # Auto-detect available terminal emulator
     # Prefer kitty > alacritty > gnome-terminal
@@ -75,11 +102,12 @@ kill_screensaver() {
     if [[ -n "$SCREENSAVER_PID" ]]; then
         log "Killing screensaver"
 
-        # Kill the terminal process
-        kill "$TERMINAL_PID" 2>/dev/null || true
+        # Force kill the terminal process instantly (SIGKILL)
+        # We don't want to wait for graceful shutdown when user wakes device
+        kill -9 "$TERMINAL_PID" 2>/dev/null || true
 
-        # Also kill any orphaned tte processes
-        pkill -f "tte " 2>/dev/null || true
+        # Also force kill any orphaned tte processes
+        pkill -9 -f "tte " 2>/dev/null || true
 
         SCREENSAVER_PID=""
         TERMINAL_PID=""
@@ -124,8 +152,15 @@ while true; do
     IDLE_MS=$(get_idle_time)
 
     if [[ "$IDLE_MS" -ge "$IDLE_TIMEOUT_MS" ]]; then
+        # Only launch if not running AND not on battery power
         if ! is_screensaver_running; then
-            launch_screensaver
+            if check_battery; then
+                # On battery - do nothing (or log once per idle session if we tracked state)
+                # For now, just silently skip to save more power.
+                : 
+            else
+                launch_screensaver
+            fi
         fi
     else
         if is_screensaver_running; then

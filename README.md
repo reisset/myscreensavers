@@ -29,9 +29,8 @@ journalctl --user -u screensaver-daemon -f
 
 ## ⚙️ Configuration
 
-### 1. Custom ASCII Art
-Replace `config/ascii_art/ascii-text-art.txt` with your own text.
-Generate art with [patorjk.com](https://patorjk.com/software/taag/) or `figlet`.
+### 1. ASCII Art
+Add your own `.txt` files to `config/ascii_art/`. The screensaver will automatically cycle through all files in this directory.
 
 ### 2. Idle Timeout
 Default is 5 minutes. To change (e.g., to 10 mins):
@@ -57,9 +56,10 @@ Available: `beams, matrix, rain, fireworks, spray, synthgrid, vhstape, blackhole
 ┌─────────────────────────────────────────────────────────────┐
 │  screensaver-daemon                                         │
 │  └─ polls GNOME IdleMonitor via DBus every 5s               │
+│  └─ CHECKS BATTERY: if discharging, skips launch            │
 │  └─ when idle > 5 min, launches fullscreen terminal         │
-│  └─ terminal runs: tte <effect> < ascii_art.txt             │
-│  └─ on user activity, kills the terminal                    │
+│  └─ terminal runs: tte <effect> < random_art.txt            │
+│  └─ on user activity, INSTANTLY kills the terminal          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
