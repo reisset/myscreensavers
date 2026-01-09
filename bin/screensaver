@@ -66,9 +66,46 @@ cleanup() {
 }
 trap cleanup EXIT SIGTERM SIGINT
 
+# Handle terminal resize
+handle_resize() {
+    TERM_COLS=$(tput cols 2>/dev/null || echo "$TERM_COLS")
+    TERM_ROWS=$(tput lines 2>/dev/null || echo "$TERM_ROWS")
+    [[ -n "$TTE_PID" ]] && kill "$TTE_PID" 2>/dev/null
+    FIRST_RUN=true  # Re-establish canvas with new dimensions
+}
+trap handle_resize SIGWINCH
+
 # Hide cursor and clear screen once at start
 tput civis 2>/dev/null || true
 clear
+
+# Wait for terminal to reach stable dimensions (handles fullscreen transition)
+wait_for_stable_dimensions() {
+    local prev_cols=0 prev_rows=0 stable_count=0 attempt=0
+    local max_attempts=20  # Max 2 seconds (20 * 0.1s)
+
+    while [[ $stable_count -lt 3 && $attempt -lt $max_attempts ]]; do
+        TERM_COLS=$(tput cols 2>/dev/null || echo 80)
+        TERM_ROWS=$(tput lines 2>/dev/null || echo 24)
+
+        if [[ "$TERM_COLS" == "$prev_cols" && "$TERM_ROWS" == "$prev_rows" ]]; then
+            ((stable_count++))
+        else
+            stable_count=0
+            prev_cols=$TERM_COLS
+            prev_rows=$TERM_ROWS
+        fi
+        ((attempt++))
+        sleep 0.1
+    done
+
+    # Sanity check for fullscreen (should be >100 cols on modern displays)
+    if [[ $TERM_COLS -lt 100 || $TERM_ROWS -lt 20 ]]; then
+        sleep 0.5
+        TERM_COLS=$(tput cols 2>/dev/null || echo 80)
+        TERM_ROWS=$(tput lines 2>/dev/null || echo 24)
+    fi
+}
 
 # Shuffle array function (Fisher-Yates)
 shuffle_effects() {
@@ -82,6 +119,9 @@ shuffle_effects() {
     done
     echo "${arr[@]}"
 }
+
+# Initialize terminal dimensions
+wait_for_stable_dimensions
 
 # Track if this is the first effect (to establish canvas position)
 FIRST_RUN=true
@@ -112,8 +152,8 @@ while true; do
         if [[ "$FIRST_RUN" == true ]]; then
             # First effect: establish canvas position (no --reuse-canvas)
             timeout "$SAFETY_TIMEOUT" tte \
-                --canvas-width 0 \
-                --canvas-height 0 \
+                --canvas-width "$TERM_COLS" \
+                --canvas-height "$TERM_ROWS" \
                 --anchor-canvas c \
                 --anchor-text c \
                 --no-eol \
@@ -123,8 +163,8 @@ while true; do
         else
             # Subsequent effects: reuse canvas for seamless in-place transition
             timeout "$SAFETY_TIMEOUT" tte \
-                --canvas-width 0 \
-                --canvas-height 0 \
+                --canvas-width "$TERM_COLS" \
+                --canvas-height "$TERM_ROWS" \
                 --anchor-canvas c \
                 --anchor-text c \
                 --reuse-canvas \
