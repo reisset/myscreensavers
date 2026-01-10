@@ -7,8 +7,8 @@ Auto-activates after 5 minutes of idle. Displays animated ASCII art using [Termi
 ## 🚀 Install
 
 ```bash
-git clone git@github.com:reisset/myscreensavers.git ~/screensaver
-cd ~/screensaver
+git clone git@github.com:reisset/myscreensavers.git ~/myscreensavers
+cd ~/myscreensavers
 ./install.sh
 ```
 
@@ -65,7 +65,7 @@ Available: `beams, matrix, rain, fireworks, spray, synthgrid, vhstape, blackhole
 
 **Requirements:**
 - Ubuntu 22.04+ (GNOME Wayland/X11)
-- Python 3 + `terminaltexteffects`
+- `sudo` access (installer auto-installs `pipx` and `terminaltexteffects` if missing)
 - Terminal: `kitty` or `alacritty` (recommended for best fullscreen), `gnome-terminal`
 
 ## Troubleshooting
@@ -80,7 +80,7 @@ Available: `beams, matrix, rain, fireworks, spray, synthgrid, vhstape, blackhole
 systemctl --user stop screensaver-daemon
 systemctl --user disable screensaver-daemon
 rm ~/.config/systemd/user/screensaver-daemon.service
-rm -rf ~/screensaver
+rm -rf ~/myscreensavers
 ```
 
 ## Credits

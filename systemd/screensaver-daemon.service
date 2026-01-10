@@ -6,7 +6,7 @@ PartOf=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=%h/screensaver/bin/screensaver-daemon
+ExecStart=%h/myscreensavers/bin/screensaver-daemon
 Restart=on-failure
 RestartSec=5
 
