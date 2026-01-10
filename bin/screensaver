@@ -89,13 +89,13 @@ wait_for_stable_dimensions() {
         TERM_ROWS=$(tput lines 2>/dev/null || echo 24)
 
         if [[ "$TERM_COLS" == "$prev_cols" && "$TERM_ROWS" == "$prev_rows" ]]; then
-            ((stable_count++))
+            ((++stable_count))
         else
             stable_count=0
             prev_cols=$TERM_COLS
             prev_rows=$TERM_ROWS
         fi
-        ((attempt++))
+        ((++attempt))
         sleep 0.1
     done
 
